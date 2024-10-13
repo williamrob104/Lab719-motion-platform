@@ -1,6 +1,9 @@
+import logging
 from PyQt6.QtWidgets import QApplication
 from motion_platform import MotionPlatform
 from custom_widgets import MainWidget
+
+logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
     motion_platform = MotionPlatform()

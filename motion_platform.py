@@ -1,47 +1,62 @@
+import logging
 import serial.tools.list_ports
 import serial
 
+logger = logging.getLogger()
+
 
 class MotionPlatform:
-    def __init__(self, log: bool=True):
-        self._logger = print if log else lambda _: _
-
+    def __init__(self):
         port = self._findPortByName('Prolific USB-to-Serial Comm Port')
         self._xy_serial = serial.Serial(port, 115200, timeout=0.01)
 
         port = self._findPortByName('USB Serial Port')
         self._z_serial = serial.Serial(port, 19200, timeout=0.01)
 
-    def _xy_serial_communicate(self, axis_addr: bytes, varcom: str):
-        self._logger(self._xy_serial.readall().decode(errors='replace'))
-        self._xy_serial.write(b'\\' + axis_addr + b'\r')
+    def _xy_serial_communicate(self, axis_addr: int, varcom: str):
+        self._xy_serial.readall() # clear input buffer
+
+        payload = f'\\{axis_addr}\r'
+        self._xy_serial.write(payload.encode())
         self._xy_serial.flush()
-        self._logger(self._xy_serial.readline().decode(errors='replace'))
-        self._xy_serial.write(varcom.encode() + b'\r')
+        logger.info('Serial 1 send ' + repr(payload))
+
+        response = self._xy_serial.readline().decode(errors='replace')
+        logger.info('Serial 1 read ' + repr(response))
+
+        payload = varcom + '\r'
+        self._xy_serial.write(payload.encode())
         self._xy_serial.flush()
-        lines = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
-        self._logger('\r'.join(lines))
-        for line in lines:
+        logger.info('Serial 1 send ' + repr(payload))
+
+        response = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
+        logger.info('Serial 1 read ' + repr(''.join(response)))
+
+        for line in response:
             idx = line.find('<')
             if idx != -1:
                 return int(line[:idx])
         return None
 
-    def _x_axis_execute(self, varcom: str):
-        return self._xy_serial_communicate(b'1', varcom)
-
-    def _y_axis_execute(self, varcom: str):
-        return self._xy_serial_communicate(b'2', varcom)
-
     def _z_serial_communicate(self, station: bytes, cmd: bytes):
-        self._xy_serial.readall().decode(errors='replace')
+        self._z_serial.readall() # clear input buffer
+
         data = station + cmd
         lrc = self._calculateLRC(data)
         payload = ':' + (data + lrc).hex().upper() + '\r\n'
         self._z_serial.write(payload.encode())
         self._z_serial.flush()
-        lines = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
+        logger.info('Serial 2 send ' + repr(payload))
+
+        response = [line.decode(errors='replace') for line in self._z_serial.readlines()]
+        logger.info('Serial 2 read ' + repr(''.join(response)))
         return None
+
+    def _x_axis_execute(self, varcom: str):
+        return self._xy_serial_communicate(1, varcom)
+
+    def _y_axis_execute(self, varcom: str):
+        return self._xy_serial_communicate(2, varcom)
 
     def _z_axis_execute(self, cmd: bytes):
         return self._z_serial_communicate(b'\x01', cmd)
