@@ -1,23 +1,17 @@
-import ctypes
-
 from PyQt6.QtWidgets import QApplication
-
-import myhardware
-import custom_widgets
+from motion_platform import MotionPlatform
+from custom_widgets import MainWidget
 
 if __name__ == '__main__':
-    hardware = myhardware.MyHardware()
-    hardware.enable()
-
-    myappid = "mycompany.myproduct.subproduct.version"  # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    motion_platform = MotionPlatform()
+    motion_platform.enable()
 
     app = QApplication([])
-    app.setApplicationName("3-axis")
+    app.setApplicationName("Motion Platform")
     app.setWindowIcon
     app.setStyle("fusion")
 
-    widget = custom_widgets.MainWidget(hardware)
+    widget = MainWidget(motion_platform)
     widget.show()
 
     app.exec()

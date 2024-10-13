@@ -1,7 +1,7 @@
 import serial.tools.list_ports
 import serial
 
-class MyHardware:
+class MotionPlatform:
     def __init__(self, log: bool=True):
         self._logger = print if log else lambda _: _
 

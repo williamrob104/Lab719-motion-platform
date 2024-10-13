@@ -1,46 +1,48 @@
 import struct
 
-import serial.serialutil
-import serial.tools.list_ports
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import *
-from serial import Serial
+
+from motion_platform import MotionPlatform
 
 
 class MainWidget(QWidget):
-    def __init__(self, myhardware, parent=None):
+    def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
 
         layout = QHBoxLayout()
-        layout.addWidget(ManualControlWidget(myhardware))
+        layout.addWidget(ManualControlWidget(motion_plotform))
 
         self.setLayout(layout)
 
 
 class ManualControlWidget(QWidget):
-    def __init__(self, myhardware, parent=None):
+    def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
 
         layout = QFormLayout()
         layout.setHorizontalSpacing(30)
         layout.setVerticalSpacing(15)
-        jog_position_widget = JogPositionWidget(myhardware)
+        jog_axis_widget = JogAxisWidget(motion_plotform)
         layout.addRow(
             QLabel("Jog Position"),
-            jog_position_widget
+            jog_axis_widget
         )
         layout.addRow(
             QLabel("Jog Distance"),
-            JogDistanceWidget(jog_position_widget.setJogDistance),
+            JogDistanceWidget(jog_axis_widget.setJogDistance),
+        )
+        layout.addRow(
+            QLabel("Jog speed"),
+            JogSpeedWidget(jog_axis_widget.setJogSpeed)
         )
         self.setLayout(layout)
 
 
-class JogPositionWidget(QWidget):
-    def __init__(self, myhardware, parent=None):
+class JogAxisWidget(QWidget):
+    def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
-        self.serial = serial
 
         xy_buttons = QGridLayout()
         button = QToolButton()
@@ -53,7 +55,7 @@ class JogPositionWidget(QWidget):
         xy_buttons.addWidget(button, 1, 0)
         button = QToolButton()
         button.setIcon(load_icon("home.png"))
-        button.clicked.connect(myhardware.homeXY)
+        button.clicked.connect(motion_plotform.homeXY)
         xy_buttons.addWidget(button, 1, 1)
         button = QToolButton()
         button.setIcon(load_icon("chevron-right.png"))
@@ -92,6 +94,9 @@ class JogPositionWidget(QWidget):
 
     def setJogDistance(self, jog_distance):
         self.jog_distance = jog_distance
+
+    def setJogSpeed(self, jog_speed):
+        self.jog_speed = jog_speed
 
     def onMoveButtonClicked(self, dir):
         if self.serial.isOpen():
@@ -135,12 +140,22 @@ class JogDistanceWidget(QWidget):
         self.set_jog_distance_func(float(self.buttons[i].text()))
 
 
-def display_error_message(text):
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Icon.Critical)
-    msg.setText(text)
-    msg.setWindowTitle("Error")
-    msg.exec()
+class JogSpeedWidget(QWidget):
+    def __init__(self, set_jog_speed_func, parent=None):
+        super().__init__(parent)
+        self.set_jog_distance_func = set_jog_speed_func
+
+        layout = QHBoxLayout()
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        number_box = QSpinBox()
+        number_box.setRange(1, 2000)
+        number_box.setSingleStep(200)
+        layout.addWidget(number_box)
+
+        self.setLayout(layout)
 
 
 def load_icon(filename) -> QIcon:
