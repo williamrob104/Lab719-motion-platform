@@ -14,13 +14,13 @@ class MotionPlatform:
             raise RuntimeError(f"Cannot find port name '{name}'")
 
     def _x_axis_execute(self, varcom: str):
-        self._logger(self._xy_serial.readall().decode())
+        self._logger(self._xy_serial.readall().decode(errors='replace'))
         self._xy_serial.write(b'\\1\r')
         self._xy_serial.flush()
-        self._logger(self._xy_serial.readline().decode())
+        self._logger(self._xy_serial.readline().decode(errors='replace'))
         self._xy_serial.write(varcom.encode() + b'\r')
         self._xy_serial.flush()
-        lines = [line.decode() for line in self._xy_serial.readlines()]
+        lines = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
         self._logger('\r'.join(lines))
         for line in lines:
             idx = line.find('<')
@@ -29,13 +29,13 @@ class MotionPlatform:
         return None
 
     def _y_axis_execute(self, varcom: str):
-        self._logger(self._xy_serial.readall().decode())
+        self._logger(self._xy_serial.readall().decode(errors='replace'))
         self._xy_serial.write(b'\\2\r')
         self._xy_serial.flush()
-        self._logger(self._xy_serial.readline().decode())
+        self._logger(self._xy_serial.readline().decode(errors='replace'))
         self._xy_serial.write(varcom.encode() + b'\r')
         self._xy_serial.flush()
-        lines = [line.decode() for line in self._xy_serial.readlines()]
+        lines = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
         self._logger('\r'.join(lines))
         for line in lines:
             idx = line.find('<')
