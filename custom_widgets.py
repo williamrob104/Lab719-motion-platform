@@ -6,11 +6,11 @@ from motion_platform import MotionPlatform
 
 
 class MainWidget(QWidget):
-    def __init__(self, motion_plotform: MotionPlatform, parent=None):
+    def __init__(self, motion_plotform: MotionPlatform, monitor_status: bool, parent=None):
         super().__init__(parent)
 
         self.manual_control_widget = ManualControlWidget(motion_plotform)
-        self.enable_widget = EnableWidget(motion_plotform)
+        self.enable_widget = EnableWidget(motion_plotform, monitor_status)
 
         layout = QVBoxLayout()
         layout.addWidget(self.manual_control_widget)
@@ -20,7 +20,7 @@ class MainWidget(QWidget):
 
 
 class EnableWidget(QWidget):
-    def __init__(self, motion_plotform: MotionPlatform, parent=None):
+    def __init__(self, motion_plotform: MotionPlatform, monitor_status: bool, parent=None):
         super().__init__(parent)
 
         layout = QHBoxLayout()
@@ -32,12 +32,12 @@ class EnableWidget(QWidget):
 
         self.setLayout(layout)
 
-        timer = QTimer()
-        timer.timeout.connect(lambda: button.setEnabled(not motion_plotform.isEnabled()))
-
-        self.bgthread = QThread()
-        self.bgthread.started.connect(lambda: timer.start(500))
-        self.bgthread.start()
+        if monitor_status:
+            timer = QTimer()
+            timer.timeout.connect(lambda: button.setEnabled(not motion_plotform.isEnabled()))
+            self.bgthread = QThread()
+            self.bgthread.started.connect(lambda: timer.start(500))
+            self.bgthread.start()
 
 
 class ManualControlWidget(QWidget):

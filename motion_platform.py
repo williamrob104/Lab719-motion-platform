@@ -11,7 +11,7 @@ class MotionPlatform:
         self._xy_serial = serial.Serial(port, 115200, timeout=0.01)
 
         port = self._findPortByName('USB Serial Port')
-        self._z_serial = serial.Serial(port, 19200, timeout=0.01)
+        self._z_serial = serial.Serial(port, 19200, timeout=0.1)
 
     def _xy_serial_communicate(self, axis_addr: int, varcom: str):
         self._xy_serial.readall() # clear input buffer
@@ -48,8 +48,8 @@ class MotionPlatform:
         self._z_serial.flush()
         logger.info('Serial 2 send ' + repr(payload))
 
-        response = [line.decode(errors='replace') for line in self._z_serial.readlines()]
-        logger.info('Serial 2 read ' + repr(''.join(response)))
+        response = self._z_serial.readline().decode(errors='replace')
+        logger.info('Serial 2 read ' + repr(response))
         return None
 
     def _x_axis_execute(self, varcom: str):

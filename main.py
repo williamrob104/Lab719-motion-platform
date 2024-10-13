@@ -13,7 +13,7 @@ if __name__ == '__main__':
     app.setWindowIcon
     app.setStyle("fusion")
 
-    widget = MainWidget(motion_platform)
+    widget = MainWidget(motion_platform, monitor_status=False)
     widget.show()
 
     app.exec()
