@@ -1,5 +1,3 @@
-import struct
-
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import *
@@ -22,19 +20,19 @@ class ManualControlWidget(QWidget):
         super().__init__(parent)
 
         layout = QFormLayout()
-        layout.setHorizontalSpacing(30)
+        layout.setHorizontalSpacing(10)
         layout.setVerticalSpacing(15)
         jog_axis_widget = JogAxisWidget(motion_plotform)
         layout.addRow(
-            QLabel("Jog Position"),
+            QLabel("Jog Axis"),
             jog_axis_widget
         )
         layout.addRow(
-            QLabel("Jog Distance"),
+            QLabel("Jog Distance (mm)"),
             JogDistanceWidget(jog_axis_widget.setJogDistance),
         )
         layout.addRow(
-            QLabel("Jog speed"),
+            QLabel("Jog speed (mm/s)"),
             JogSpeedWidget(jog_axis_widget.setJogSpeed)
         )
         self.setLayout(layout)
@@ -43,15 +41,17 @@ class ManualControlWidget(QWidget):
 class JogAxisWidget(QWidget):
     def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
+        self.jog_distance = 0
+        self.jog_speed = 0.0
 
         xy_buttons = QGridLayout()
         button = QToolButton()
         button.setIcon(load_icon("chevron-up.png"))
-        button.clicked.connect(lambda: self.onMoveButtonClicked("Y"))
+        button.clicked.connect(lambda: motion_plotform.moveIncrementY(self.jog_distance, self.jog_speed))
         xy_buttons.addWidget(button, 0, 1)
         button = QToolButton()
         button.setIcon(load_icon("chevron-left.png"))
-        button.clicked.connect(lambda: self.onMoveButtonClicked("X-"))
+        button.clicked.connect(lambda: motion_plotform.moveIncrementX(-self.jog_distance, self.jog_speed))
         xy_buttons.addWidget(button, 1, 0)
         button = QToolButton()
         button.setIcon(load_icon("home.png"))
@@ -59,25 +59,25 @@ class JogAxisWidget(QWidget):
         xy_buttons.addWidget(button, 1, 1)
         button = QToolButton()
         button.setIcon(load_icon("chevron-right.png"))
-        button.clicked.connect(lambda: self.onMoveButtonClicked("X"))
+        button.clicked.connect(lambda: motion_plotform.moveIncrementX(self.jog_distance, self.jog_speed))
         xy_buttons.addWidget(button, 1, 2)
         button = QToolButton()
         button.setIcon(load_icon("chevron-down.png"))
-        button.clicked.connect(lambda: self.onMoveButtonClicked("Y-"))
+        button.clicked.connect(lambda: motion_plotform.moveIncrementY(-self.jog_distance, self.jog_speed))
         xy_buttons.addWidget(button, 2, 1)
 
         z_buttons = QGridLayout()
         button = QToolButton()
         button.setIcon(load_icon("chevron-up.png"))
-        button.clicked.connect(lambda: self.onMoveButtonClicked("Z"))
+        # button.clicked.connect(lambda: self.onMoveButtonClicked("Z"))
         z_buttons.addWidget(button, 0, 0)
         button = QToolButton()
         button.setIcon(load_icon("home.png"))
-        button.clicked.connect(lambda: self.onHomeButtonClicked("Z"))
+        # button.clicked.connect(lambda: self.onHomeButtonClicked("Z"))
         z_buttons.addWidget(button, 1, 0)
         button = QToolButton()
         button.setIcon(load_icon("chevron-down.png"))
-        button.clicked.connect(lambda: self.onMoveButtonClicked("Z-"))
+        # button.clicked.connect(lambda: self.onMoveButtonClicked("Z-"))
         z_buttons.addWidget(button, 2, 0)
 
         layout = QGridLayout()
@@ -98,16 +98,6 @@ class JogAxisWidget(QWidget):
     def setJogSpeed(self, jog_speed):
         self.jog_speed = jog_speed
 
-    def onMoveButtonClicked(self, dir):
-        if self.serial.isOpen():
-            gcode = f"G91\nG0 {dir}{self.jog_distance:.3f}\n"
-            self.serial.write(gcode.encode())
-
-    def onHomeButtonClicked(self, dir):
-        if self.serial.isOpen():
-            gcode = f"G28 {dir}\n"
-            self.serial.write(gcode.encode())
-
 
 class JogDistanceWidget(QWidget):
     def __init__(self, set_jog_distance_func, parent=None):
@@ -119,7 +109,7 @@ class JogDistanceWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        dists = ["0.1", "1", "10", "50"]
+        dists = ["0.1", "1", "10", "100"]
         self.buttons = []
         for i, dist in enumerate(dists):
             button = QToolButton()
@@ -143,7 +133,6 @@ class JogDistanceWidget(QWidget):
 class JogSpeedWidget(QWidget):
     def __init__(self, set_jog_speed_func, parent=None):
         super().__init__(parent)
-        self.set_jog_distance_func = set_jog_speed_func
 
         layout = QHBoxLayout()
         layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
@@ -153,9 +142,12 @@ class JogSpeedWidget(QWidget):
         number_box = QSpinBox()
         number_box.setRange(1, 2000)
         number_box.setSingleStep(200)
+        number_box.valueChanged.connect(lambda: set_jog_speed_func(number_box.value()))
         layout.addWidget(number_box)
 
         self.setLayout(layout)
+
+        set_jog_speed_func(number_box.value())
 
 
 def load_icon(filename) -> QIcon:
