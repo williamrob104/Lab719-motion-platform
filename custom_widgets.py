@@ -98,7 +98,7 @@ class JogAxisWidget(QWidget):
         z_buttons.addWidget(button, 0, 0)
         button = QToolButton()
         button.setIcon(load_icon("home.png"))
-        # button.clicked.connect(lambda: self.onHomeButtonClicked("Z"))
+        button.clicked.connect(motion_plotform.homeZ)
         z_buttons.addWidget(button, 1, 0)
         button = QToolButton()
         button.setIcon(load_icon("chevron-down.png"))

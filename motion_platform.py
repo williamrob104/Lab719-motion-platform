@@ -6,12 +6,11 @@ class MotionPlatform:
     def __init__(self, log: bool=True):
         self._logger = print if log else lambda _: _
 
-        name = 'Prolific USB-to-Serial Comm Port'
-        port = next(serial.tools.list_ports.grep(name), None)
-        if port:
-            self._xy_serial = serial.Serial(port[0], 115200, timeout=0.01)
-        else:
-            raise RuntimeError(f"Cannot find port name '{name}'")
+        port = self.findPortByName('Prolific USB-to-Serial Comm Port')
+        self._xy_serial = serial.Serial(port, 115200, timeout=0.01)
+
+        port = self.findPortByName('USB Serial Port')
+        self._z_serial = serial.Serial(port, 19200, timeout=0.01)
 
     def _xy_serial_communicate(self, axis_addr: bytes, varcom: str):
         self._logger(self._xy_serial.readall().decode(errors='replace'))
@@ -34,6 +33,19 @@ class MotionPlatform:
     def _y_axis_execute(self, varcom: str):
         return self._xy_serial_communicate(b'2', varcom)
 
+    def _z_serial_communicate(self, station: bytes, cmd: bytes):
+        self._xy_serial.readall().decode(errors='replace')
+        data = station + cmd
+        lrc = self.calculateLRC(data)
+        payload = ':' + (data + lrc).hex().upper() + '\r\n'
+        self._z_serial.write(payload.encode())
+        self._z_serial.flush()
+        lines = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
+        return None
+
+    def _z_axis_execute(self, cmd: bytes):
+        return self._z_serial_communicate(b'\x01', cmd)
+
     def enable(self):
         self._x_axis_execute('CLEARFAULTS')
         self._y_axis_execute('CLEARFAULTS')
@@ -49,6 +61,9 @@ class MotionPlatform:
         self._x_axis_execute('HOMECMD')
         self._y_axis_execute('HOMECMD')
 
+    def homeZ(self):
+        self._z_axis_execute(b'\x06\x20\x1E\x00\x03')
+
     def moveIncrementX(self, distance_mm, speed_mm_s):
         self._x_axis_execute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
 
@@ -58,3 +73,23 @@ class MotionPlatform:
     @staticmethod
     def _XYmm2count(mm):
         return int(mm * 1000)
+
+    @staticmethod
+    def findPortByName(name):
+        port = ''
+        for port_i, desc_i, _ in serial.tools.list_ports.comports():
+            name_i = desc_i.replace(f'({port_i})','').strip()
+            if name == name_i:
+                if not port:
+                    port = port_i
+                else:
+                    raise RuntimeError(f"Multiple ports with name '{name}'")
+        return port
+
+    @staticmethod
+    def calculateLRC(byte_array: bytes):
+        lrc = 0
+        for byte in byte_array:
+            lrc = (lrc + byte) & 0xFF  # Add byte and apply mask for &HFF
+        lrc = ((~lrc + 1) & 0xFF)  # Two's complement and apply mask for &HFF
+        return lrc.to_bytes()
