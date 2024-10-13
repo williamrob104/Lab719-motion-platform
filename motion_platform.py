@@ -44,10 +44,17 @@ class MotionPlatform:
         return None
 
     def enable(self):
+        self._x_axis_execute('CLEARFAULTS')
+        self._y_axis_execute('CLEARFAULTS')
         self._x_axis_execute('EN')
         self._y_axis_execute('EN')
 
+    def isEnabled(self):
+        return bool(self._x_axis_execute('ACTIVE') and self._y_axis_execute('ACTIVE'))
+
     def homeXY(self):
+        self.moveIncrementX(5, 10)
+        self.moveIncrementY(5, 10)
         self._x_axis_execute('HOMECMD')
         self._y_axis_execute('HOMECMD')
 

@@ -4,7 +4,6 @@ from custom_widgets import MainWidget
 
 if __name__ == '__main__':
     motion_platform = MotionPlatform()
-    motion_platform.enable()
 
     app = QApplication([])
     app.setApplicationName("Motion Platform")

@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer, QThread
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import *
 
@@ -9,10 +9,35 @@ class MainWidget(QWidget):
     def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
 
-        layout = QHBoxLayout()
-        layout.addWidget(ManualControlWidget(motion_plotform))
+        self.manual_control_widget = ManualControlWidget(motion_plotform)
+        self.enable_widget = EnableWidget(motion_plotform)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.manual_control_widget)
+        layout.addWidget(self.enable_widget)
 
         self.setLayout(layout)
+
+
+class EnableWidget(QWidget):
+    def __init__(self, motion_plotform: MotionPlatform, parent=None):
+        super().__init__(parent)
+
+        layout = QHBoxLayout()
+
+        button = QPushButton()
+        button.setText('Enable')
+        button.clicked.connect(motion_plotform.enable)
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+        timer = QTimer()
+        timer.timeout.connect(lambda: button.setEnabled(not motion_plotform.isEnabled()))
+
+        self.bgthread = QThread()
+        self.bgthread.started.connect(lambda: timer.start(500))
+        self.bgthread.start()
 
 
 class ManualControlWidget(QWidget):
@@ -109,7 +134,7 @@ class JogDistanceWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        dists = ["0.1", "1", "10", "100"]
+        dists = ["1", "10", "100", "200"]
         self.buttons = []
         for i, dist in enumerate(dists):
             button = QToolButton()
@@ -141,7 +166,8 @@ class JogSpeedWidget(QWidget):
 
         number_box = QSpinBox()
         number_box.setRange(1, 2000)
-        number_box.setSingleStep(200)
+        number_box.setSingleStep(100)
+        number_box.setValue(10)
         number_box.valueChanged.connect(lambda: set_jog_speed_func(number_box.value()))
         layout.addWidget(number_box)
 
