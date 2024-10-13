@@ -66,8 +66,10 @@ class ManualControlWidget(QWidget):
 class JogAxisWidget(QWidget):
     def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
+        self.motion_plotform = motion_plotform
         self.jog_distance = 0
         self.jog_speed = 0.0
+        self.z_position = None
 
         xy_buttons = QGridLayout()
         button = QToolButton()
@@ -94,15 +96,15 @@ class JogAxisWidget(QWidget):
         z_buttons = QGridLayout()
         button = QToolButton()
         button.setIcon(load_icon("chevron-up.png"))
-        # button.clicked.connect(lambda: self.onMoveButtonClicked("Z"))
+        button.clicked.connect(lambda: self.onJogZButtonClicked(self.jog_distance))
         z_buttons.addWidget(button, 0, 0)
         button = QToolButton()
         button.setIcon(load_icon("home.png"))
-        button.clicked.connect(motion_plotform.homeZ)
+        button.clicked.connect(self.onHomeZButtonClicked)
         z_buttons.addWidget(button, 1, 0)
         button = QToolButton()
         button.setIcon(load_icon("chevron-down.png"))
-        # button.clicked.connect(lambda: self.onMoveButtonClicked("Z-"))
+        button.clicked.connect(lambda: self.onJogZButtonClicked(-self.jog_distance))
         z_buttons.addWidget(button, 2, 0)
 
         layout = QGridLayout()
@@ -116,6 +118,16 @@ class JogAxisWidget(QWidget):
         layout.addLayout(z_buttons, 1, 1, Qt.AlignmentFlag.AlignCenter)
 
         self.setLayout(layout)
+
+    def onHomeZButtonClicked(self):
+        self.motion_plotform.homeZ()
+        self.z_position = 0.0
+
+    def onJogZButtonClicked(self, jog_increment):
+        if self.z_position is None:
+            return
+        self.z_position += jog_increment
+        self.motion_plotform.moveAbsoluteZ(self.z_position, self.jog_speed / 2000 * 100)
 
     def setJogDistance(self, jog_distance):
         self.jog_distance = jog_distance
