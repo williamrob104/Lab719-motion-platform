@@ -10,7 +10,6 @@ if __name__ == '__main__':
 
     app = QApplication([])
     app.setApplicationName("Motion Platform")
-    app.setWindowIcon
     app.setStyle("fusion")
 
     widget = MainWidget(motion_platform, monitor_status=False)

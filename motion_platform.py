@@ -2,7 +2,7 @@ import logging
 import serial.tools.list_ports
 import serial
 
-logger = logging.getLogger()
+logger = logging.getLogger('serial_port')
 
 
 class MotionPlatform:
@@ -16,21 +16,21 @@ class MotionPlatform:
     def _xy_serial_communicate(self, axis_addr: int, varcom: str):
         self._xy_serial.readall() # clear input buffer
 
-        payload = f'\\{axis_addr}\r'
+        payload = f'\\{axis_addr}\r\n'
         self._xy_serial.write(payload.encode())
         self._xy_serial.flush()
-        logger.info('Serial 1 send ' + repr(payload))
+        logger.info('xy send ' + repr(payload))
 
         response = self._xy_serial.readline().decode(errors='replace')
-        logger.info('Serial 1 read ' + repr(response))
+        logger.info('xy read ' + repr(response))
 
-        payload = varcom + '\r'
+        payload = varcom + '\r\n'
         self._xy_serial.write(payload.encode())
         self._xy_serial.flush()
-        logger.info('Serial 1 send ' + repr(payload))
+        logger.info('xy send ' + repr(payload))
 
         response = [line.decode(errors='replace') for line in self._xy_serial.readlines()]
-        logger.info('Serial 1 read ' + repr(''.join(response)))
+        logger.info('xy read ' + repr(''.join(response)))
 
         for line in response:
             idx = line.find('<')
@@ -46,10 +46,10 @@ class MotionPlatform:
         payload = ':' + (data + lrc).hex().upper() + '\r\n'
         self._z_serial.write(payload.encode())
         self._z_serial.flush()
-        logger.info('Serial 2 send ' + repr(payload))
+        logger.info('z  send ' + repr(payload))
 
         response = self._z_serial.readline().decode(errors='replace')
-        logger.info('Serial 2 read ' + repr(response))
+        logger.info('z  read ' + repr(response))
         return None
 
     def _x_axis_execute(self, varcom: str):
