@@ -102,14 +102,16 @@ class MotionPlatform:
 
     @staticmethod
     def _findPortByName(name):
-        port = ''
+        port = None
         for port_i, desc_i, _ in serial.tools.list_ports.comports():
             name_i = desc_i.replace(f'({port_i})','').strip()
             if name == name_i:
-                if not port:
+                if port is None:
                     port = port_i
                 else:
                     raise RuntimeError(f"Multiple ports with name '{name}'")
+        if port is None:
+            raise RuntimeError(f"Cannot find port with name '{name}'")
         return port
 
     @staticmethod
