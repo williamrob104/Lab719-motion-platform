@@ -6,11 +6,11 @@ from motion_platform import MotionPlatform
 
 
 class MainWidget(QWidget):
-    def __init__(self, motion_plotform: MotionPlatform, monitor_status: bool, parent=None):
+    def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
 
         self.manual_control_widget = ManualControlWidget(motion_plotform)
-        self.enable_widget = EnableWidget(motion_plotform, monitor_status)
+        self.enable_widget = EnableWidget(motion_plotform)
 
         layout = QVBoxLayout()
         layout.addWidget(self.manual_control_widget)
@@ -19,25 +19,17 @@ class MainWidget(QWidget):
         self.setLayout(layout)
 
 
-class EnableWidget(QWidget):
-    def __init__(self, motion_plotform: MotionPlatform, monitor_status: bool, parent=None):
+class EnableWidget(QPushButton):
+    def __init__(self, motion_plotform: MotionPlatform, parent=None):
         super().__init__(parent)
+        self.motion_plotform = motion_plotform
 
-        layout = QHBoxLayout()
+        self.setText('Enable')
+        self.clicked.connect(motion_plotform.enable)
 
-        button = QPushButton()
-        button.setText('Enable')
-        button.clicked.connect(motion_plotform.enable)
-        layout.addWidget(button)
-
-        self.setLayout(layout)
-
-        if monitor_status:
-            timer = QTimer()
-            timer.timeout.connect(lambda: button.setEnabled(not motion_plotform.isEnabled()))
-            self.bgthread = QThread()
-            self.bgthread.started.connect(lambda: timer.start(500))
-            self.bgthread.start()
+    def enterEvent(self, event):
+        self.setToolTip('Platform ' + ('' if self.motion_plotform.isEnabled() else 'not ') + 'enabled')
+        super().enterEvent(event)
 
 
 class ManualControlWidget(QWidget):

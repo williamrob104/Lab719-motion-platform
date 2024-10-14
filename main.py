@@ -12,7 +12,7 @@ if __name__ == '__main__':
     app.setApplicationName("Motion Platform")
     app.setStyle("fusion")
 
-    widget = MainWidget(motion_platform, monitor_status=False)
+    widget = MainWidget(motion_platform)
     widget.show()
 
     app.exec()
