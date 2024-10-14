@@ -9,6 +9,8 @@ class MotionPlatform:
     def __init__(self):
         port = self._findPortByName('Prolific USB-to-Serial Comm Port')
         self.cdhd_drive = CDHDDrive(port, baudrate=115200, timeout=0.01)
+        self._x_axis_execute('OPMODE 8')
+        self._y_axis_execute('OPMODE 8')
 
         port = self._findPortByName('USB Serial Port')
         self.tc100_drive = TC100Drive(port, baudrate=19200, timeout=0.1)
@@ -37,14 +39,26 @@ class MotionPlatform:
         self._x_axis_execute('HOMECMD')
         self._y_axis_execute('HOMECMD')
 
-    def homeZ(self):
-        self._z_axis_execute(b'\x06\x20\x1E\x00\x03')
+    def moveAbsoluteX(self, position_mm, speed_mm_s):
+        self._x_axis_execute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
+
+    def moveAbsoluteY(self, position_mm, speed_mm_s):
+        self._y_axis_execute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
 
     def moveIncrementX(self, distance_mm, speed_mm_s):
         self._x_axis_execute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
 
     def moveIncrementY(self, distance_mm, speed_mm_s):
         self._y_axis_execute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
+
+    def isMoveCompletedX(self):
+        return self._x_axis_execute('STOPPED') in [1, 2]
+
+    def isMoveCompletedY(self):
+        return self._y_axis_execute('STOPPED') in [1, 2]
+
+    def homeZ(self):
+        self._z_axis_execute(b'\x06\x20\x1E\x00\x03')
 
     def moveAbsoluteZ(self, position_mm, speed_percentage):
         speed_percentage = int(speed_percentage)
