@@ -57,6 +57,14 @@ class MotionPlatform:
 
         self._z_axis_execute(b'\x06\x20\x1E\x00\x01')
 
+    @property
+    def maxSpeedX(self):
+        return 2500 # mm/s
+
+    @property
+    def maxSpeedY(self):
+        return 2000 # mm/s
+
     @staticmethod
     def _XYmm2count(mm):
         return int(mm * 1000)
