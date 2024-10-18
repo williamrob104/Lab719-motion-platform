@@ -29,6 +29,9 @@ class MotionPlatform:
         self._yAxisExecute('CLEARFAULTS')
         self._xAxisExecute('EN')
         self._yAxisExecute('EN')
+        self._zAxisExecute(b'\x06\x20\x11\x00\x01') # clear fault sequence 1
+        self._zAxisExecute(b'\x06\x20\x1E\x00\x06') # clear fault sequence 2
+        self._zAxisExecute(b'\x06\x20\x11\x00\x00') # power on
 
     def isEnabled(self):
         return bool(self._xAxisExecute('ACTIVE') and self._yAxisExecute('ACTIVE'))
