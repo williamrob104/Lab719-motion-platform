@@ -9,67 +9,67 @@ class MotionPlatform:
     def __init__(self):
         port = self._findPortByName('Prolific USB-to-Serial Comm Port')
         self.cdhd_drive = CDHDDrive(port, baudrate=115200, timeout=0.01)
-        self._x_axis_execute('OPMODE 8')
-        self._y_axis_execute('OPMODE 8')
+        self._xAxisExecute('OPMODE 8')
+        self._yAxisExecute('OPMODE 8')
 
         port = self._findPortByName('USB Serial Port')
         self.tc100_drive = TC100Drive(port, baudrate=19200, timeout=0.1)
 
-    def _x_axis_execute(self, varcom: str):
+    def _xAxisExecute(self, varcom: str):
         return self.cdhd_drive.communicate(1, varcom)
 
-    def _y_axis_execute(self, varcom: str):
+    def _yAxisExecute(self, varcom: str):
         return self.cdhd_drive.communicate(2, varcom)
 
-    def _z_axis_execute(self, cmd: bytes):
+    def _zAxisExecute(self, cmd: bytes):
         return self.tc100_drive.communicate(b'\x01', cmd)
 
     def enable(self):
-        self._x_axis_execute('CLEARFAULTS')
-        self._y_axis_execute('CLEARFAULTS')
-        self._x_axis_execute('EN')
-        self._y_axis_execute('EN')
+        self._xAxisExecute('CLEARFAULTS')
+        self._yAxisExecute('CLEARFAULTS')
+        self._xAxisExecute('EN')
+        self._yAxisExecute('EN')
 
     def isEnabled(self):
-        return bool(self._x_axis_execute('ACTIVE') and self._y_axis_execute('ACTIVE'))
+        return bool(self._xAxisExecute('ACTIVE') and self._yAxisExecute('ACTIVE'))
 
     def homeXY(self):
         self.moveIncrementX(5, 10)
         self.moveIncrementY(5, 10)
-        self._x_axis_execute('HOMECMD')
-        self._y_axis_execute('HOMECMD')
+        self._xAxisExecute('HOMECMD')
+        self._yAxisExecute('HOMECMD')
 
     def moveAbsoluteX(self, position_mm, speed_mm_s):
-        self._x_axis_execute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
+        self._xAxisExecute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
 
     def moveAbsoluteY(self, position_mm, speed_mm_s):
-        self._y_axis_execute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
+        self._yAxisExecute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
 
     def moveIncrementX(self, distance_mm, speed_mm_s):
-        self._x_axis_execute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
+        self._xAxisExecute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
 
     def moveIncrementY(self, distance_mm, speed_mm_s):
-        self._y_axis_execute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
+        self._yAxisExecute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
 
     def isMoveCompletedX(self):
-        return self._x_axis_execute('STOPPED') in [1, 2]
+        return self._xAxisExecute('STOPPED') in [1, 2]
 
     def isMoveCompletedY(self):
-        return self._y_axis_execute('STOPPED') in [1, 2]
+        return self._yAxisExecute('STOPPED') in [1, 2]
 
     def homeZ(self):
-        self._z_axis_execute(b'\x06\x20\x1E\x00\x03')
+        self._zAxisExecute(b'\x06\x20\x1E\x00\x03')
 
     def moveAbsoluteZ(self, position_mm, speed_percentage):
         speed_percentage = int(speed_percentage)
         if not 0 <= speed_percentage <= 100:
             raise ValueError(f'speed_percentage={speed_percentage} exceeds limits')
-        self._z_axis_execute(b'\x06\x20\x14\x00' + speed_percentage.to_bytes())
+        self._zAxisExecute(b'\x06\x20\x14\x00' + speed_percentage.to_bytes())
 
         position_mm_times_100 = max(int(position_mm * 100), 0)
-        self._z_axis_execute(b'\x10\x20\x02\x00\x02\x04' + position_mm_times_100.to_bytes(4))
+        self._zAxisExecute(b'\x10\x20\x02\x00\x02\x04' + position_mm_times_100.to_bytes(4))
 
-        self._z_axis_execute(b'\x06\x20\x1E\x00\x01')
+        self._zAxisExecute(b'\x06\x20\x1E\x00\x01')
 
     @property
     def maxSpeedX(self):
