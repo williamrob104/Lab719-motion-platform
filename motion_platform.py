@@ -44,11 +44,8 @@ class MotionPlatform:
         self._xAxisExecute('HOMECMD')
         self._yAxisExecute('HOMECMD')
 
-    def moveAbsoluteX(self, position_mm, speed_mm_s):
-        self._xAxisExecute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
-
-    def moveAbsoluteY(self, position_mm, speed_mm_s):
-        self._yAxisExecute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
+    def homeZ(self):
+        self._zAxisExecute(b'\x06\x20\x1E\x00\x03')
 
     def moveIncrementX(self, distance_mm, speed_mm_s):
         self._xAxisExecute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
@@ -56,14 +53,11 @@ class MotionPlatform:
     def moveIncrementY(self, distance_mm, speed_mm_s):
         self._yAxisExecute(f'MOVEINC {self._XYmm2count(distance_mm)} {speed_mm_s}')
 
-    def isMoveCompletedX(self):
-        return self._xAxisExecute('STOPPED') in [1, 2]
+    def moveAbsoluteX(self, position_mm, speed_mm_s):
+        self._xAxisExecute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
 
-    def isMoveCompletedY(self):
-        return self._yAxisExecute('STOPPED') in [1, 2]
-
-    def homeZ(self):
-        self._zAxisExecute(b'\x06\x20\x1E\x00\x03')
+    def moveAbsoluteY(self, position_mm, speed_mm_s):
+        self._yAxisExecute(f'MOVEABS {self._XYmm2count(position_mm)} {speed_mm_s}')
 
     def moveAbsoluteZ(self, position_mm, speed_percentage):
         speed_percentage = int(speed_percentage)
@@ -75,6 +69,15 @@ class MotionPlatform:
         self._zAxisExecute(b'\x10\x20\x02\x00\x02\x04' + position_mm_times_100.to_bytes(4))
 
         self._zAxisExecute(b'\x06\x20\x1E\x00\x01')
+
+    def isMoveCompletedX(self):
+        return self._xAxisExecute('STOPPED') in [1, 2]
+
+    def isMoveCompletedY(self):
+        return self._yAxisExecute('STOPPED') in [1, 2]
+
+    def isMoveCompletedZ(self):
+        return self._zAxisExecute(b'\x03\x10\x00\x00\x01') == b'\x03\x02\x00\x00'
 
     @property
     def maxSpeedX(self):
