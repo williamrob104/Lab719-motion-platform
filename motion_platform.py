@@ -34,7 +34,9 @@ class MotionPlatform:
         self._zAxisExecute(b'\x06\x20\x11\x00\x00') # power on
 
     def isEnabled(self):
-        return bool(self._xAxisExecute('ACTIVE') and self._yAxisExecute('ACTIVE'))
+        return self._xAxisExecute('ACTIVE') == 1 and \
+               self._yAxisExecute('ACTIVE') == 1 and \
+               self._zAxisExecute(b'\x03\x10\x20\x00\x01') == b'\x03\x02\x00\x0E'
 
     def homeXY(self):
         self.moveIncrementX(5, 10)
@@ -151,7 +153,7 @@ class TC100Drive:
 
         response = self.ser.readline().decode(errors='replace')
         logger.info('TC100 read ' + repr(response))
-        return None
+        return bytes.fromhex(response.strip()[3:-2])
 
     @staticmethod
     def _calculateLRC(byte_array: bytes):
