@@ -7,12 +7,12 @@ logger = logging.getLogger('serial_port')
 
 class MotionPlatform:
     def __init__(self):
-        port = self._findPortByName('Prolific USB-to-Serial Comm Port')
+        port = self._findPortBySerialNumber('FTB6SPL3A')
         self.cdhd_drive = CDHDDrive(port, baudrate=115200, timeout=0.01)
         self._xAxisExecute('OPMODE 8')
         self._yAxisExecute('OPMODE 8')
 
-        port = self._findPortByName('USB Serial Port')
+        port = self._findPortBySerialNumber('DN034V26A')
         self.tc100_drive = TC100Drive(port, baudrate=19200, timeout=0.1)
 
     def _xAxisExecute(self, varcom: str):
@@ -92,18 +92,11 @@ class MotionPlatform:
         return int(mm * 1000)
 
     @staticmethod
-    def _findPortByName(name):
-        port = None
-        for port_i, desc_i, _ in serial.tools.list_ports.comports():
-            name_i = desc_i.replace(f'({port_i})','').strip()
-            if name == name_i:
-                if port is None:
-                    port = port_i
-                else:
-                    raise RuntimeError(f"Multiple ports with name '{name}'")
-        if port is None:
-            raise RuntimeError(f"Cannot find port with name '{name}'")
-        return port
+    def _findPortBySerialNumber(serial_number: str):
+        for port in serial.tools.list_ports.comports():
+            if port.serial_number == serial_number:
+                return port.device
+        raise RuntimeError(f"Cannot find port with serialnumber '{serial_number}'")
 
 
 class CDHDDrive:
