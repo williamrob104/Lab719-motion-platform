@@ -8,12 +8,12 @@ logger = logging.getLogger('serial_port')
 class MotionPlatform:
     def __init__(self):
         port = self._findPortBySerialNumber('FTB6SPL3A')
-        self.cdhd_drive = CDHDDrive(port, baudrate=115200, timeout=0.01)
+        self.cdhd_drive = CDHDDrive(port, baudrate=115200, timeout=0.05)
         self._xAxisExecute('OPMODE 8')
         self._yAxisExecute('OPMODE 8')
 
         port = self._findPortBySerialNumber('DN034V26A')
-        self.tc100_drive = TC100Drive(port, baudrate=19200, timeout=0.1)
+        self.tc100_drive = TC100Drive(port, baudrate=115200, timeout=0.05)
 
     def _xAxisExecute(self, varcom: str):
         return self.cdhd_drive.communicate(1, varcom)
