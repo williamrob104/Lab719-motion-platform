@@ -1,4 +1,5 @@
 import logging
+import re
 import serial.tools.list_ports
 import serial
 
@@ -9,8 +10,8 @@ class MotionPlatform:
     def __init__(self):
         port = self._findPortBySerialNumber('FTB6SPL3A')
         self.cdhd_drive = CDHDDrive(port, baudrate=115200, timeout=0.05)
-        self._xAxisExecute('OPMODE 8')
-        self._yAxisExecute('OPMODE 8')
+        self._maxSpeedX = self._xAxisExecute('VLIM')
+        self._maxSpeedY = self._yAxisExecute('VLIM')
 
         port = self._findPortBySerialNumber('DN034V26A')
         self.tc100_drive = TC100Drive(port, baudrate=115200, timeout=0.05)
@@ -35,8 +36,8 @@ class MotionPlatform:
 
     def isEnabled(self):
         return self._xAxisExecute('ACTIVE') == 1 and \
-               self._yAxisExecute('ACTIVE') == 1 and \
-               self._zAxisExecute(b'\x03\x10\x20\x00\x01') == b'\x03\x02\x00\x0E'
+               self._yAxisExecute('ACTIVE') == 1 #and \
+            #    self._zAxisExecute(b'\x03\x10\x20\x00\x01') == b'\x03\x02\x00\x0E'
 
     def homeXY(self):
         self.moveIncrementX(5, 10)
@@ -81,11 +82,11 @@ class MotionPlatform:
 
     @property
     def maxSpeedX(self):
-        return 2500 # mm/s
+        return self._maxSpeedX
 
     @property
     def maxSpeedY(self):
-        return 2000 # mm/s
+        return self._maxSpeedY
 
     @staticmethod
     def _XYmm2count(mm):
@@ -104,6 +105,7 @@ class CDHDDrive:
         if 'timeout' not in kwargs:
             kwargs['timeout'] = 1
         self.ser = serial.Serial(port, **kwargs)
+        self.response_pattern = re.compile(r"^([-+]?\d+\.?\d*(?:[eE][-+]?\d+)?).*?<\w{2}>\s*$")
 
     def communicate(self, axis_addr: int, varcom: str):
         self.ser.readall() # clear input buffer
@@ -123,12 +125,21 @@ class CDHDDrive:
 
         response = [line.decode(errors='replace') for line in self.ser.readlines()]
         logger.info('CDHD  read ' + repr(''.join(response)))
+        return self._parseResponse(response)
 
-        for line in response:
-            idx = line.find('<')
-            if idx != -1:
-                return int(line[:idx])
-        return None
+    def _parseResponse(self, response: (str | list[str])) -> (int | float | None):
+        if isinstance(response, str):
+            match = re.match(self.response_pattern, response.strip())
+            if not match:
+                return None
+            else:
+                number_str = match.group(1)
+                return float(number_str) if ('.' in number_str or 'e' in number_str.lower()) else int(number_str)
+        else:
+            for res in response:
+                num_or_none = self._parseResponse(res)
+                if num_or_none is not None:
+                    return num_or_none
 
 
 class TC100Drive:
